@@ -15,9 +15,6 @@ class DashboardController extends Controller
         $statistik = [
             'total_barang' => Barang::count(),
             'stok_tersedia' => (int) Barang::sum('stok'),
-            'permintaan_pending' => Transaksi::where('jenis', Transaksi::JENIS_PERMINTAAN)
-                ->where('status', Transaksi::STATUS_PENDING)
-                ->count(),
             'keluar_bulan_ini' => (int) Transaksi::where('jenis', Transaksi::JENIS_KELUAR)
                 ->where('tanggal', '>=', $awalBulan)
                 ->sum('jumlah'),

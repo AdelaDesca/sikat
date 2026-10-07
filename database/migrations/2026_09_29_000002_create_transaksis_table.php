@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('transaksis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('barang_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('jenis', 20)->index();      // masuk | keluar | permintaan
-            $table->unsignedInteger('jumlah');
+            $table->string('kode_barang', 10);
+            $table->foreign('kode_barang')->references('kode_barang')->on('barangs')
+                ->cascadeOnUpdate()->cascadeOnDelete();
+            $table->string('jenis', 20)->index();      // masuk | keluar | koreksi
+            $table->integer('jumlah');                 // koreksi bisa negatif (selisih stok)
             $table->string('oleh');                    // nama pelaku / pemohon / vendor
             $table->string('keterangan')->nullable();
-            $table->string('status', 20)->default('selesai')->index(); // selesai | pending | ditolak
             $table->dateTime('tanggal')->index();
             $table->timestamps();
         });

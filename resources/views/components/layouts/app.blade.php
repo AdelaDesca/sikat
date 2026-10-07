@@ -6,8 +6,7 @@
         ['route' => 'riwayat.index', 'label' => 'Riwayat Barang', 'icon' => 'history'],
     ];
     $user = auth()->user();
-    $inisial = collect(explode(' ', $user->name))->filter()->take(2)->map(fn ($k) => mb_substr($k, 0, 1))->implode('');
-    $jumlahNotif = $notifikasi['pending']->count() + $notifikasi['menipis']->count();
+    $inisial = mb_strtoupper(mb_substr($user->username, 0, 1));
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -16,6 +15,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'Dashboard' }} · SIKAT Bank Papua</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@900&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -27,12 +29,9 @@
         <aside
             class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform peer-checked:translate-x-0 lg:translate-x-0">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-7 pt-7 pb-8">
-                <span class="grid size-8 place-items-center rounded-lg bg-navy-800">
-                    <span class="size-4 rounded-full bg-brand-500"></span>
-                </span>
                 <span class="leading-tight">
-                    <span class="block text-[17px] font-extrabold tracking-tight text-navy-800">BANK PAPUA</span>
-                    <span class="block text-[10px] font-semibold tracking-wide text-brand-500">SISTEM ATK</span>
+                    <span class="block text-[20px] font-black tracking-wider text-navy-800" style="font-family: 'Cinzel Decorative', fantasy;">SIKAT</span>
+                    <span class="block text-[10px] font-semibold tracking-wide text-brand-500">SISTEM KELOLA ATK</span>
                 </span>
             </a>
 
@@ -53,14 +52,13 @@
                 @endforeach
             </nav>
 
-            <div class="mx-4 mt-6 border-t border-slate-200 pt-4">
+            <div class="mx-4 mt-auto mb-5 border-t border-slate-200 pt-4">
                 <div class="flex items-center gap-3 px-3">
                     <span class="grid size-10 shrink-0 place-items-center rounded-full bg-navy-800 text-sm font-bold text-white">
                         {{ $inisial }}
                     </span>
                     <div class="min-w-0 flex-1 leading-tight">
                         <p class="truncate text-[13px] font-bold">{{ $user->name }}</p>
-                        <p class="truncate text-[11px] text-slate-500">{{ $user->jabatan }}</p>
                     </div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -86,37 +84,24 @@
                         <summary
                             class="relative grid size-10 cursor-pointer list-none place-items-center rounded-full border border-slate-200 text-navy-800 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                             <x-icon name="bell" class="size-[18px]" />
-                            @if ($jumlahNotif > 0)
+                            @if ($stokMenipis->isNotEmpty())
                                 <span class="absolute top-1.5 right-2 size-2 rounded-full bg-brand-500 ring-2 ring-white"></span>
                             @endif
                         </summary>
                         <div class="absolute right-0 z-30 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
                             <p class="border-b border-slate-100 px-4 py-3 text-sm font-bold">Notifikasi</p>
                             <div class="max-h-96 overflow-y-auto text-sm">
-                                @forelse ($notifikasi['pending'] as $p)
-                                    <a href="{{ route('riwayat.index', ['jenis' => 'permintaan']) }}" class="flex gap-3 px-4 py-3 hover:bg-slate-50">
-                                        <x-icon name="hourglass" class="mt-0.5 size-4 shrink-0 text-amber-500" />
-                                        <span>Permintaan <b>{{ $p->jumlah }} {{ $p->barang->satuan }} {{ $p->barang->nama }}</b> menunggu persetujuan</span>
-                                    </a>
-                                @empty
-                                @endforelse
-                                @foreach ($notifikasi['menipis'] as $b)
+                                @forelse ($stokMenipis as $b)
                                     <a href="{{ route('barang.index', ['q' => $b->nama]) }}" class="flex gap-3 px-4 py-3 hover:bg-slate-50">
                                         <x-icon name="alert" @class(['mt-0.5 size-4 shrink-0', 'text-red-500' => $b->stok == 0, 'text-amber-500' => $b->stok > 0]) />
                                         <span><b>{{ $b->nama }}</b> {{ $b->stok == 0 ? 'habis' : "tersisa {$b->stok} {$b->satuan}" }}</span>
                                     </a>
-                                @endforeach
-                                @if ($jumlahNotif === 0)
+                                @empty
                                     <p class="px-4 py-6 text-center text-slate-500">Tidak ada notifikasi.</p>
-                                @endif
+                                @endforelse
                             </div>
                         </div>
                     </details>
-
-                    <span class="hidden items-center gap-2 rounded-lg bg-slate-50 px-4 py-2 text-[13px] font-semibold text-navy-800 sm:flex">
-                        <x-icon name="map-pin" class="size-4" />
-                        {{ $user->kantor ?? 'Kantor Pusat' }}
-                    </span>
                 </div>
             </header>
 

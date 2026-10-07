@@ -23,9 +23,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/riwayat-barang', [TransaksiController::class, 'index'])->name('riwayat.index');
     Route::post('/transaksi', [TransaksiController::class, 'store'])->name('transaksi.store');
-    Route::post('/permintaan', [TransaksiController::class, 'storePermintaan'])->name('permintaan.store');
-    Route::patch('/permintaan/{transaksi}/setujui', [TransaksiController::class, 'setujui'])->name('permintaan.setujui');
-    Route::patch('/permintaan/{transaksi}/tolak', [TransaksiController::class, 'tolak'])->name('permintaan.tolak');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

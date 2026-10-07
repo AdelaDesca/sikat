@@ -2,13 +2,19 @@
     $jenisBadge = [
         'keluar' => ['Keluar', 'bg-amber-100 text-amber-600'],
         'masuk' => ['Masuk', 'bg-blue-100 text-blue-600'],
-        'permintaan' => ['Permintaan', 'bg-orange-100 text-orange-500'],
+        'koreksi' => ['Koreksi', 'bg-slate-100 text-slate-600'],
     ];
-    $adaFilter = request()->hasAny(['dari', 'sampai', 'kategori', 'jenis']);
+    $adaFilter = request()->hasAny(['dari', 'sampai', 'kategori', 'jenis', 'q']);
 @endphp
 
-<x-layouts.app title="Riwayat Keluar Masuk ATK">
-    <form method="GET" action="{{ route('riwayat.index') }}" class="flex flex-wrap items-center gap-3 sm:gap-5">
+<x-layouts.app title="Riwayat Barang">
+    <form method="GET" action="{{ route('riwayat.index') }}" data-live-search="hasil-riwayat" class="flex flex-wrap items-center gap-3 sm:gap-5">
+        <div class="relative w-full sm:w-72">
+            <x-icon name="search" class="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-slate-500" />
+            <input type="search" name="q" value="{{ $cari }}" placeholder="Cari barang, kode, nama peminta..."
+                class="form-input py-2.5 pl-11">
+        </div>
+
         <div class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-[15px]">
             <x-icon name="calendar" class="size-[18px] shrink-0 text-slate-600" />
             <input type="date" name="dari" value="{{ $dari->format('Y-m-d') }}" onchange="this.form.submit()"
@@ -40,6 +46,7 @@
         <noscript><button type="submit" class="btn btn-outline">Terapkan</button></noscript>
     </form>
 
+    <div id="hasil-riwayat">
     <div class="card mt-6 overflow-x-auto">
         <table class="w-full">
             <thead class="table-head">
@@ -50,60 +57,26 @@
                     <th>Jumlah</th>
                     <th>Oleh</th>
                     <th>Keterangan</th>
-                    <th></th>
                 </tr>
             </thead>
             <tbody class="table-body">
                 @forelse ($transaksis as $t)
-                    @php
-                        [$label, $kelas] = $jenisBadge[$t->jenis];
-                        $ditolak = $t->status === \App\Models\Transaksi::STATUS_DITOLAK;
-                        $pending = $t->status === \App\Models\Transaksi::STATUS_PENDING;
-                    @endphp
-                    <tr @class(['opacity-60' => $ditolak])>
-                        <td class="text-slate-500">{{ $t->tanggal->translatedFormat('d M H:i') }}</td>
+                    @php [$label, $kelas] = $jenisBadge[$t->jenis]; @endphp
+                    <tr>
+                        <td class="text-slate-500">{{ $t->tanggal->translatedFormat('d M Y H:i') }}</td>
                         <td class="font-semibold">{{ $t->barang->nama }}</td>
-                        <td>
-                            <span class="badge {{ $kelas }}">{{ $label }}</span>
-                            @if ($pending)
-                                <span class="ml-1 text-xs font-medium text-slate-500">Menunggu</span>
-                            @elseif ($ditolak)
-                                <span class="ml-1 text-xs font-medium text-red-500">Ditolak</span>
-                            @endif
-                        </td>
-                        <td @class([
-                            'font-bold',
-                            'text-emerald-600' => $t->isPenambahan(),
-                            'line-through' => $ditolak,
-                        ])>
-                            {{ $t->isPenambahan() ? '+' : '-' }}{{ $t->jumlah }} {{ $t->barang->satuan }}
+                        <td><span class="badge {{ $kelas }}">{{ $label }}</span></td>
+                        <td @class(['font-bold', 'text-emerald-600' => $t->isPenambahan()])>
+                            {{ $t->isPenambahan() ? '+' : '-' }}{{ abs($t->jumlah) }} {{ $t->barang->satuan }}
                         </td>
                         <td class="text-slate-700">{{ $t->oleh }}</td>
                         <td class="text-slate-500">{{ $t->keterangan ?: '—' }}</td>
-                        <td class="text-right">
-                            @if ($pending)
-                                <div class="flex justify-end gap-1">
-                                    <form method="POST" action="{{ route('permintaan.setujui', $t) }}">
-                                        @csrf @method('PATCH')
-                                        <button type="submit" title="Setujui"
-                                            class="cursor-pointer rounded-lg p-2 text-emerald-600 hover:bg-emerald-50">
-                                            <x-icon name="check" class="size-4" />
-                                        </button>
-                                    </form>
-                                    <form method="POST" action="{{ route('permintaan.tolak', $t) }}">
-                                        @csrf @method('PATCH')
-                                        <button type="submit" title="Tolak"
-                                            class="cursor-pointer rounded-lg p-2 text-red-600 hover:bg-red-50">
-                                            <x-icon name="x" class="size-4" />
-                                        </button>
-                                    </form>
-                                </div>
-                            @endif
-                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="py-10 text-center text-slate-500">Tidak ada transaksi pada periode ini.</td>
+                        <td colspan="6" class="py-10 text-center text-slate-500">
+                            {{ $cari ? "Tidak ada transaksi yang cocok dengan \"{$cari}\" pada periode ini." : 'Tidak ada transaksi pada periode ini.' }}
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
@@ -111,4 +84,5 @@
     </div>
 
     <div class="mt-6">{{ $transaksis->links() }}</div>
+    </div>
 </x-layouts.app>

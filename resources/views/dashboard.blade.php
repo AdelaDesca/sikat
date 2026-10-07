@@ -2,13 +2,12 @@
     $kartu = [
         ['label' => 'Total Barang', 'nilai' => $statistik['total_barang'], 'ket' => 'Jenis ATK terdaftar', 'icon' => 'archive'],
         ['label' => 'Stok Tersedia', 'nilai' => $statistik['stok_tersedia'], 'ket' => 'Unit siap distribusi', 'icon' => 'shield'],
-        ['label' => 'Permintaan Pending', 'nilai' => $statistik['permintaan_pending'], 'ket' => 'Menunggu persetujuan', 'icon' => 'hourglass'],
         ['label' => 'Barang Keluar Bulan Ini', 'nilai' => $statistik['keluar_bulan_ini'], 'ket' => 'Didistribusikan', 'icon' => 'external'],
     ];
 @endphp
 
-<x-layouts.app title="Ringkasan Logistik">
-    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+<x-layouts.app title="Dashboard">
+    <div class="grid gap-6 md:grid-cols-3">
         @foreach ($kartu as $k)
             <div class="card p-6">
                 <div class="flex items-start justify-between gap-3">

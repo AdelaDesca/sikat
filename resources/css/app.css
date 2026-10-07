@@ -42,6 +42,11 @@
         @apply block w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-[15px] text-ink placeholder:text-slate-400 focus:border-navy-800 focus:ring-2 focus:ring-navy-100 focus:outline-none;
     }
 
+    /* Sembunyikan ikon mata bawaan Edge, diganti tombol sendiri. */
+    .form-input::-ms-reveal {
+        display: none;
+    }
+
     .form-error {
         @apply mt-1.5 text-sm text-red-600;
     }

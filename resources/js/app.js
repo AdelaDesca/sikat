@@ -10,6 +10,18 @@ document.addEventListener('click', (event) => {
         return;
     }
 
+    // Tampilkan / sembunyikan password: tombol dengan data-toggle-password="id-input".
+    const toggle = event.target.closest('[data-toggle-password]');
+    if (toggle) {
+        const input = document.getElementById(toggle.dataset.togglePassword);
+        const terlihat = input.type === 'password';
+        input.type = terlihat ? 'text' : 'password';
+        toggle.querySelector('[data-icon="show"]').classList.toggle('hidden', terlihat);
+        toggle.querySelector('[data-icon="hide"]').classList.toggle('hidden', !terlihat);
+        toggle.title = toggle.ariaLabel = terlihat ? 'Sembunyikan password' : 'Lihat password';
+        return;
+    }
+
     if (event.target.closest('[data-close]')) {
         event.target.closest('dialog')?.close();
         return;
@@ -25,6 +37,18 @@ document.addEventListener('click', (event) => {
         if (!el.contains(event.target)) el.removeAttribute('open');
     });
 });
+
+// Saat modal ditutup (Batal, ✕, klik luar, Esc), kosongkan isian & pesan error
+// agar modal berikutnya dibuka dalam keadaan bersih. Nilai bawaan diambil dari data-reset.
+document.addEventListener('close', (event) => {
+    const dialog = event.target;
+    if (!(dialog instanceof HTMLDialogElement)) return;
+
+    dialog.querySelectorAll('input:not([type=hidden]), textarea, select').forEach((el) => {
+        el.value = el.dataset.reset ?? '';
+    });
+    dialog.querySelectorAll('.form-error').forEach((el) => el.remove());
+}, true);
 
 // Isi form di dalam modal dari atribut data-* tombol pembuka,
 // mis. data-field-nama="Kertas" mengisi input name="nama", data-action mengganti action form.
@@ -47,6 +71,33 @@ function fillForm(dialog, data) {
         if (target) target.textContent = value;
     });
 }
+
+// Pencarian langsung saat mengetik: form data-live-search="id-container" memuat ulang isi container.
+let jedaCari;
+let permintaanCari;
+document.addEventListener('input', (event) => {
+    const form = event.target.closest('form[data-live-search]');
+    // Hanya kolom ketik; tanggal & pilihan dropdown sudah memuat ulang halaman sendiri.
+    if (!form || !['search', 'text'].includes(event.target.type)) return;
+
+    clearTimeout(jedaCari);
+    jedaCari = setTimeout(async () => {
+        const url = new URL(form.action);
+        url.search = new URLSearchParams(new FormData(form)).toString();
+
+        permintaanCari?.abort();
+        permintaanCari = new AbortController();
+        try {
+            const res = await fetch(url, { signal: permintaanCari.signal });
+            const html = new DOMParser().parseFromString(await res.text(), 'text/html');
+            const id = form.dataset.liveSearch;
+            document.getElementById(id).replaceWith(html.getElementById(id));
+            history.replaceState(null, '', url);
+        } catch (e) {
+            if (e.name !== 'AbortError') form.submit();
+        }
+    }, 300);
+});
 
 // Buka kembali modal yang gagal validasi setelah reload.
 document.addEventListener('DOMContentLoaded', () => {

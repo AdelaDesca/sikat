@@ -19,14 +19,21 @@ class TransaksiController extends Controller
         $sampai = $this->tanggal($request->query('sampai')) ?? now()->endOfMonth();
         $kategori = $request->query('kategori');
         $jenis = $request->query('jenis');
+        $cari = trim((string) $request->query('q'));
 
         $transaksis = Transaksi::with('barang')
             ->whereBetween('tanggal', [$dari->copy()->startOfDay(), $sampai->copy()->endOfDay()])
+            ->when($cari !== '', fn ($q) => $q->where(function ($q) use ($cari) {
+                $q->where('kode_barang', 'like', "%{$cari}%")
+                    ->orWhereHas('barang', fn ($b) => $b->where('nama', 'like', "%{$cari}%"))
+                    ->orWhere('oleh', 'like', "%{$cari}%")
+                    ->orWhere('keterangan', 'like', "%{$cari}%");
+            }))
             ->when($kategori, fn ($q) => $q->whereHas('barang', fn ($b) => $b->where('kategori', $kategori)))
             ->when($jenis, fn ($q) => $q->where('jenis', $jenis))
             ->latest('tanggal')
             ->latest('id')
-            ->paginate(10)
+            ->paginate(50)
             ->withQueryString();
 
         return view('riwayat.index', [
@@ -35,8 +42,8 @@ class TransaksiController extends Controller
             'sampai' => $sampai,
             'kategori' => $kategori,
             'jenis' => $jenis,
+            'cari' => $cari,
             'kategoriList' => Barang::daftarKategori(),
-            'semuaBarang' => Barang::orderBy('nama')->get(['id', 'nama', 'stok', 'satuan']),
         ]);
     }
 
@@ -46,15 +53,15 @@ class TransaksiController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'barang_id' => ['required', 'exists:barangs,id'],
+            'kode_barang' => ['required', 'exists:barangs,kode_barang'],
             'jenis' => ['required', 'in:masuk,keluar'],
             'jumlah' => ['required', 'integer', 'min:1'],
             'oleh' => ['required', 'string', 'max:255'],
             'keterangan' => ['nullable', 'string', 'max:255'],
         ], $this->pesan(), $this->atribut());
 
-        DB::transaction(function () use ($data, $request) {
-            $barang = Barang::lockForUpdate()->findOrFail($data['barang_id']);
+        DB::transaction(function () use ($data) {
+            $barang = Barang::lockForUpdate()->findOrFail($data['kode_barang']);
 
             if ($data['jenis'] === Transaksi::JENIS_KELUAR && $data['jumlah'] > $barang->stok) {
                 throw ValidationException::withMessages([
@@ -64,8 +71,6 @@ class TransaksiController extends Controller
 
             $barang->transaksis()->create([
                 ...$data,
-                'user_id' => $request->user()->id,
-                'status' => Transaksi::STATUS_SELESAI,
                 'tanggal' => now(),
             ]);
 
@@ -77,59 +82,6 @@ class TransaksiController extends Controller
         $label = $data['jenis'] === Transaksi::JENIS_MASUK ? 'Barang masuk' : 'Barang keluar';
 
         return back()->with('success', "{$label} berhasil dicatat.");
-    }
-
-    /**
-     * Ajukan permintaan restock ATK; stok baru bertambah setelah disetujui.
-     */
-    public function storePermintaan(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'barang_id' => ['required', 'exists:barangs,id'],
-            'jumlah' => ['required', 'integer', 'min:1'],
-            'keterangan' => ['nullable', 'string', 'max:255'],
-        ], $this->pesan(), $this->atribut());
-
-        Transaksi::create([
-            ...$data,
-            'user_id' => $request->user()->id,
-            'jenis' => Transaksi::JENIS_PERMINTAAN,
-            'oleh' => $request->user()->name,
-            'status' => Transaksi::STATUS_PENDING,
-            'tanggal' => now(),
-        ]);
-
-        return back()->with('success', 'Permintaan ATK berhasil diajukan dan menunggu persetujuan.');
-    }
-
-    public function setujui(Transaksi $transaksi): RedirectResponse
-    {
-        $this->pastikanPending($transaksi);
-
-        DB::transaction(function () use ($transaksi) {
-            $transaksi->update(['status' => Transaksi::STATUS_SELESAI]);
-            $transaksi->barang()->increment('stok', $transaksi->jumlah);
-        });
-
-        return back()->with('success', 'Permintaan disetujui, stok telah ditambahkan.');
-    }
-
-    public function tolak(Transaksi $transaksi): RedirectResponse
-    {
-        $this->pastikanPending($transaksi);
-
-        $transaksi->update(['status' => Transaksi::STATUS_DITOLAK]);
-
-        return back()->with('success', 'Permintaan ditolak.');
-    }
-
-    private function pastikanPending(Transaksi $transaksi): void
-    {
-        abort_unless(
-            $transaksi->jenis === Transaksi::JENIS_PERMINTAAN && $transaksi->status === Transaksi::STATUS_PENDING,
-            422,
-            'Permintaan ini sudah diproses.'
-        );
     }
 
     private function tanggal(?string $nilai): ?Carbon
@@ -165,7 +117,7 @@ class TransaksiController extends Controller
     private function atribut(): array
     {
         return [
-            'barang_id' => 'Barang',
+            'kode_barang' => 'Barang',
             'jenis' => 'Jenis transaksi',
             'jumlah' => 'Jumlah',
             'oleh' => 'Nama pelaku',

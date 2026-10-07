@@ -6,16 +6,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['barang_id', 'user_id', 'jenis', 'jumlah', 'oleh', 'keterangan', 'status', 'tanggal'])]
+#[Fillable(['kode_barang', 'jenis', 'jumlah', 'oleh', 'keterangan', 'tanggal'])]
 class Transaksi extends Model
 {
     public const JENIS_MASUK = 'masuk';
     public const JENIS_KELUAR = 'keluar';
-    public const JENIS_PERMINTAAN = 'permintaan';
-
-    public const STATUS_SELESAI = 'selesai';
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_DITOLAK = 'ditolak';
+    public const JENIS_KOREKSI = 'koreksi'; // jumlah = selisih stok (+/-), bukan pemakaian
 
     protected function casts(): array
     {
@@ -27,19 +23,15 @@ class Transaksi extends Model
 
     public function barang(): BelongsTo
     {
-        return $this->belongsTo(Barang::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Barang::class, 'kode_barang');
     }
 
     /**
-     * Masuk & permintaan menambah stok, keluar mengurangi stok.
+     * Masuk menambah stok, keluar mengurangi stok, koreksi mengikuti tanda selisihnya.
      */
     public function isPenambahan(): bool
     {
-        return $this->jenis !== self::JENIS_KELUAR;
+        return $this->jenis === self::JENIS_MASUK
+            || ($this->jenis === self::JENIS_KOREKSI && $this->jumlah > 0);
     }
 }

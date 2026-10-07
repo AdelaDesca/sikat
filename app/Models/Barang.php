@@ -7,24 +7,35 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['nama', 'kategori', 'stok', 'satuan', 'stok_minimum'])]
+#[Fillable(['kode_barang', 'nama', 'kategori', 'stok', 'satuan', 'stok_minimum'])]
 class Barang extends Model
 {
+    protected $primaryKey = 'kode_barang';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     public const STATUS_TERSEDIA = 'tersedia';
     public const STATUS_HAMPIR_HABIS = 'hampir_habis';
     public const STATUS_HABIS = 'habis';
 
     public const KATEGORI = [
-        'Kertas',
-        'Kertas Surat',
         'Alat Tulis',
+        'Amplop',
+        'Buku Tabungan',
+        'Formulir & Aplikasi',
+        'Kertas',
+        'Klip & Staples',
+        'Label & Stiker',
+        'Map & Penyimpanan',
+        'Perekat',
         'Peralatan Kantor',
-        'Penyimpanan',
-        'Tinta Printer',
-        'Administrasi',
+        'Tinta & Pita',
+        'Lain-lain',
     ];
 
-    public const SATUAN = ['Rim', 'Pcs', 'Pax', 'Unit', 'Box', 'Botol', 'Buku', 'Lusin'];
+    public const SATUAN = ['Pcs', 'Lembar', 'Buku', 'Rim', 'Box', 'Pax', 'Roll', 'Unit', 'Botol', 'Lusin', 'Set'];
 
     protected function casts(): array
     {
@@ -36,7 +47,7 @@ class Barang extends Model
 
     public function transaksis(): HasMany
     {
-        return $this->hasMany(Transaksi::class);
+        return $this->hasMany(Transaksi::class, 'kode_barang');
     }
 
     /**
