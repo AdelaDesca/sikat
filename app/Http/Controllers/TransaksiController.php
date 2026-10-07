@@ -58,6 +58,8 @@ class TransaksiController extends Controller
             'jumlah' => ['required', 'integer', 'min:1'],
             'oleh' => ['required', 'string', 'max:255'],
             'keterangan' => ['nullable', 'string', 'max:255'],
+            // Boleh diisi tanggal lampau untuk transaksi yang terlambat dicatat.
+            'tanggal' => ['nullable', 'date', 'before_or_equal:now'],
         ], $this->pesan(), $this->atribut());
 
         DB::transaction(function () use ($data) {
@@ -71,7 +73,7 @@ class TransaksiController extends Controller
 
             $barang->transaksis()->create([
                 ...$data,
-                'tanggal' => now(),
+                'tanggal' => $data['tanggal'] ?? now(),
             ]);
 
             $data['jenis'] === Transaksi::JENIS_MASUK
@@ -108,6 +110,8 @@ class TransaksiController extends Controller
             'min' => ':attribute minimal :min.',
             'exists' => ':attribute tidak ditemukan.',
             'in' => ':attribute tidak valid.',
+            'date' => ':attribute tidak valid.',
+            'before_or_equal' => ':attribute tidak boleh melewati waktu sekarang.',
         ];
     }
 
@@ -122,6 +126,7 @@ class TransaksiController extends Controller
             'jumlah' => 'Jumlah',
             'oleh' => 'Nama pelaku',
             'keterangan' => 'Keterangan',
+            'tanggal' => 'Tanggal',
         ];
     }
 }

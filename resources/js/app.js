@@ -5,6 +5,7 @@ document.addEventListener('click', (event) => {
         const dialog = document.getElementById(opener.dataset.open);
         if (dialog) {
             fillForm(dialog, opener.dataset);
+            isiWaktuSekarang(dialog);
             dialog.showModal();
         }
         return;
@@ -49,6 +50,18 @@ document.addEventListener('close', (event) => {
     });
     dialog.querySelectorAll('.form-error').forEach((el) => el.remove());
 }, true);
+
+// Input tanggal ber-data-now diisi waktu sekarang (bisa dimundurkan) dan tidak boleh melewati sekarang.
+function isiWaktuSekarang(dialog) {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    const sekarang = d.toISOString().slice(0, 16); // format datetime-local: YYYY-MM-DDTHH:MM
+
+    dialog.querySelectorAll('input[data-now]').forEach((el) => {
+        el.max = sekarang;
+        if (!el.value) el.value = sekarang;
+    });
+}
 
 // Isi form di dalam modal dari atribut data-* tombol pembuka,
 // mis. data-field-nama="Kertas" mengisi input name="nama", data-action mengganti action form.

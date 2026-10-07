@@ -89,10 +89,18 @@
                             @endif
                         </summary>
                         <div class="absolute right-0 z-30 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                            <p class="border-b border-slate-100 px-4 py-3 text-sm font-bold">Notifikasi</p>
+                            <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3 text-sm">
+                                <span class="font-bold">Notifikasi</span>
+                                @if ($stokMenipis->isNotEmpty())
+                                    <span class="text-xs text-slate-500">
+                                        {{ $stokMenipis->where('stok', 0)->count() }} habis ·
+                                        {{ $stokMenipis->where('stok', '>', 0)->count() }} hampir habis
+                                    </span>
+                                @endif
+                            </div>
                             <div class="max-h-96 overflow-y-auto text-sm">
                                 @forelse ($stokMenipis as $b)
-                                    <a href="{{ route('barang.index', ['q' => $b->nama]) }}" class="flex gap-3 px-4 py-3 hover:bg-slate-50">
+                                    <a href="{{ route('barang.index', ['q' => $b->kode_barang]) }}" class="flex gap-3 px-4 py-3 hover:bg-slate-50">
                                         <x-icon name="alert" @class(['mt-0.5 size-4 shrink-0', 'text-red-500' => $b->stok == 0, 'text-amber-500' => $b->stok > 0]) />
                                         <span><b>{{ $b->nama }}</b> {{ $b->stok == 0 ? 'habis' : "tersisa {$b->stok} {$b->satuan}" }}</span>
                                     </a>

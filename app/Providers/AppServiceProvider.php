@@ -25,8 +25,8 @@ class AppServiceProvider extends ServiceProvider
         View::composer('components.layouts.app', function ($view) {
             $view->with('stokMenipis', Barang::whereColumn('stok', '<=', 'stok_minimum')
                 ->orderBy('stok')
-                ->take(5)
-                ->get());
+                ->orderBy('kode_barang')
+                ->get(['kode_barang', 'nama', 'stok', 'satuan']));
         });
     }
 }

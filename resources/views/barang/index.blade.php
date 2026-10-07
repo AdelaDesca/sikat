@@ -135,11 +135,19 @@
                 </span></p>
             </div>
 
-            <div>
-                <label class="form-label" for="trx-jumlah">Jumlah</label>
-                <input id="trx-jumlah" type="number" name="jumlah" min="1" required class="form-input"
-                    value="{{ $aktifTrx ? old('jumlah') : '' }}">
-                @if ($aktifTrx) @error('jumlah') <p class="form-error">{{ $message }}</p> @enderror @endif
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="form-label" for="trx-tanggal">Tanggal</label>
+                    <input id="trx-tanggal" type="datetime-local" name="tanggal" required data-now class="form-input"
+                        value="{{ $aktifTrx ? old('tanggal') : '' }}">
+                    @if ($aktifTrx) @error('tanggal') <p class="form-error">{{ $message }}</p> @enderror @endif
+                </div>
+                <div>
+                    <label class="form-label" for="trx-jumlah">Jumlah</label>
+                    <input id="trx-jumlah" type="number" name="jumlah" min="1" required class="form-input"
+                        value="{{ $aktifTrx ? old('jumlah') : '' }}">
+                    @if ($aktifTrx) @error('jumlah') <p class="form-error">{{ $message }}</p> @enderror @endif
+                </div>
             </div>
             <div>
                 <label class="form-label" for="trx-oleh">Oleh</label>

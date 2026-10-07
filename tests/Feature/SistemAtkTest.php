@@ -114,6 +114,28 @@ class SistemAtkTest extends TestCase
         $this->assertSame(25, $barang->fresh()->stok);
     }
 
+    public function test_transaksi_bisa_dicatat_dengan_tanggal_lampau(): void
+    {
+        $barang = $this->barang('K002', 'Kertas A4', 10);
+        $this->actingAs($this->admin);
+        $kemarin = now()->subDay()->setTime(15, 30);
+
+        $this->post('/transaksi', [
+            'kode_barang' => 'K002', 'jenis' => 'keluar', 'jumlah' => 2, 'oleh' => 'Dian',
+            'tanggal' => $kemarin->format('Y-m-d\TH:i'),
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(8, $barang->fresh()->stok);
+        $this->assertDatabaseHas('transaksis', ['kode_barang' => 'K002', 'tanggal' => $kemarin->format('Y-m-d H:i:s')]);
+
+        // Tanggal di masa depan ditolak.
+        $this->post('/transaksi', [
+            'kode_barang' => 'K002', 'jenis' => 'masuk', 'jumlah' => 5, 'oleh' => 'Admin',
+            'tanggal' => now()->addDay()->format('Y-m-d\TH:i'),
+        ])->assertSessionHasErrors('tanggal');
+        $this->assertSame(8, $barang->fresh()->stok);
+    }
+
     public function test_keluar_tidak_boleh_melebihi_stok(): void
     {
         $barang = $this->barang('S010', 'Spidol Hitam', 4);
