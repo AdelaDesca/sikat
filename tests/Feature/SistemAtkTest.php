@@ -79,6 +79,25 @@ class SistemAtkTest extends TestCase
             ->assertViewHas('transaksis', fn ($t) => $t->total() === 1);
     }
 
+    public function test_report_kesehatan_stok(): void
+    {
+        $this->barang('K002', 'Kertas A4', 40, 'Kertas');         // tersedia
+        $this->barang('T006', 'Tinta Epson Hitam 003', 3, 'Tinta & Pita'); // hampir habis (batas 5)
+        $this->barang('T001', 'Tinta Cap', 0, 'Tinta & Pita');     // habis
+        $this->actingAs($this->admin);
+
+        $this->get('/report')->assertOk()
+            ->assertSee('Kesehatan Stok')
+            ->assertSee('67%') // 2 dari 3 barang perlu diisi ulang
+            ->assertViewHas('ringkasan', fn ($r) => $r->all() === ['habis' => 1, 'hampir_habis' => 1, 'tersedia' => 1])
+            ->assertViewHas('kritis', fn ($k) => $k->pluck('kode_barang')->all() === ['T001', 'T006']);
+
+        $this->get('/report?kategori=Kertas')->assertOk()
+            ->assertViewHas('total', 1)
+            ->assertViewHas('kritis', fn ($k) => $k->isEmpty())
+            ->assertSee('Tidak ada barang kritis');
+    }
+
     public function test_status_stok(): void
     {
         $this->assertSame(Barang::STATUS_HABIS, new Barang(['stok' => 0, 'stok_minimum' => 20])->status);
@@ -150,12 +169,29 @@ class SistemAtkTest extends TestCase
     {
         $this->seed(\Database\Seeders\BarangSeeder::class);
 
-        $this->assertSame(151, Barang::count());
+        $this->assertSame(152, Barang::count());
         $this->assertSame(0, (int) Barang::sum('stok'));
         $this->assertDatabaseHas('barangs', [
             'kode_barang' => 'B011', 'nama' => 'Buku Tabungan Simpeda', 'kategori' => 'Buku Tabungan',
         ]);
         $this->assertDatabaseHas('barangs', ['kode_barang' => 'F007B', 'nama' => 'Lampiran Form (1 Lembar)']);
+    }
+
+    public function test_data_historis_tidak_mengubah_stok_dan_data_asli(): void
+    {
+        $this->seed(\Database\Seeders\BarangSeeder::class);
+        Barang::where('kode_barang', 'K002')->update(['stok' => 40]);
+        $asli = Barang::find('K002')->transaksis()->create([
+            'jenis' => 'keluar', 'jumlah' => 1, 'oleh' => 'Admin', 'tanggal' => '2026-10-02 09:00:00',
+        ]);
+        $stokSebelum = (int) Barang::sum('stok');
+
+        $this->seed(\Database\Seeders\TransaksiHistorisSeeder::class);
+
+        $this->assertSame($stokSebelum, (int) Barang::sum('stok'));
+        $this->assertNotNull($asli->fresh());
+        $this->assertGreaterThan(1000, \App\Models\Transaksi::where('tanggal', '<', '2026-10-01')->count());
+        $this->assertSame(1, \App\Models\Transaksi::where('tanggal', '>=', '2026-10-01')->count());
     }
 
     public function test_kode_barang_tidak_boleh_ganda(): void

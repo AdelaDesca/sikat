@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransaksiController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/riwayat-barang', [TransaksiController::class, 'index'])->name('riwayat.index');
     Route::post('/transaksi', [TransaksiController::class, 'store'])->name('transaksi.store');
+
+    Route::get('/report', [ReportController::class, 'index'])->name('report.index');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

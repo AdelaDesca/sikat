@@ -4,6 +4,7 @@
         ['route' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard'],
         ['route' => 'barang.index', 'label' => 'Stok Barang', 'icon' => 'archive'],
         ['route' => 'riwayat.index', 'label' => 'Riwayat Barang', 'icon' => 'history'],
+        ['route' => 'report.index', 'label' => 'Report', 'icon' => 'chart'],
     ];
     $user = auth()->user();
     $inisial = mb_strtoupper(mb_substr($user->username, 0, 1));
@@ -19,6 +20,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@900&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('scripts')
 </head>
 
 <body data-reopen="{{ $errors->any() ? old('_modal') : '' }}">
